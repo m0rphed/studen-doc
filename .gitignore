@@ -1,0 +1,28 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv/
+
+# Кэши и отчеты инструментов
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Сгенерированные примеры и чужие образцы для сравнения (не наш код, в репозиторий не кладем)
+examples/*.docx
+examples/*.pdf
+
+# Редакторы и системные файлы
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

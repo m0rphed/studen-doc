@@ -1,0 +1,73 @@
+"""
+Модель отчёта: неизменяемые данные без знания о стиле и формате вывода.
+"""
+
+from studen_doc.model.bibliography import Bibliography, SourceFormatter
+from studen_doc.model.blocks import (
+    Block,
+    Bullets,
+    Figure,
+    Formula,
+    Listing,
+    ListItem,
+    Numbered,
+    P,
+    PageBreak,
+    Source,
+    Sources,
+    Subsection,
+    Table,
+)
+from studen_doc.model.inline import (
+    B,
+    Citation,
+    Cite,
+    Code,
+    I,
+    Inline,
+    InlineParser,
+    LineBreak,
+    Math,
+    Md,
+    Ref,
+    RichText,
+    Text,
+    as_inlines,
+)
+from studen_doc.model.report import Report, Section, TitlePage, Toc
+
+__all__ = [
+    "B",
+    "Bibliography",
+    "Block",
+    "Bullets",
+    "Citation",
+    "Cite",
+    "Code",
+    "Figure",
+    "Formula",
+    "I",
+    "Inline",
+    "InlineParser",
+    "LineBreak",
+    "ListItem",
+    "Listing",
+    "Math",
+    "Md",
+    "Numbered",
+    "P",
+    "PageBreak",
+    "Ref",
+    "Report",
+    "RichText",
+    "Section",
+    "Source",
+    "SourceFormatter",
+    "Sources",
+    "Subsection",
+    "Table",
+    "Text",
+    "TitlePage",
+    "Toc",
+    "as_inlines",
+]

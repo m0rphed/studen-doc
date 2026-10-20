@@ -1,0 +1,6 @@
+{
+  "variant": "v00_example",
+  "dataset": {"name": "Housing", "rows": 506, "target": "MEDV"},
+  "tree": {"max_depth": 4, "min_leaf": 5},
+  "models": ["linear", "tree", "forest"]
+}
