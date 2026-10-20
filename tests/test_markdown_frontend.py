@@ -481,3 +481,18 @@ def test_report_from_markdown_passes_blocks_and_values(tmp_path):
     assert resolved.labels["tbl:r"].display == "1"
     paragraph = next(node for node in resolved.nodes if type(node).__name__ == "RParagraph")
     assert "".join(n.text for n in paragraph.inlines if isinstance(n, Text)).endswith("R2 = 0,87.")
+
+
+def test_keep_with_next_div_marks_the_paragraphs_inside():
+    text = "::: keep-with-next\n**Вопрос 1**\n:::\n\nОтвет.\n"
+    question, answer = blocks(text)
+    assert question.keep_with_next is True and answer.keep_with_next is False
+    assert question == P((B("Вопрос 1"),), keep_with_next=True)  # то же содержимое, что у абзаца без обертки
+
+
+def test_substituted_negative_numbers_get_a_minus_sign_unless_asked_otherwise():
+    text = 'R2 = []{var=r2 format=".3f"}\n'
+    (default,) = blocks(text, variables={"r2": -0.3461})
+    (plain,) = blocks(text, variables={"r2": -0.3461}, minus="-")
+    assert default.parts[0][0].text == "R2 = −0,346"
+    assert plain.parts[0][0].text == "R2 = -0,346"

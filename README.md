@@ -59,7 +59,7 @@ report.add_section(
     "Ход работы",
     Subsection(
         "Метрики",
-        P("Метрика задана формулой ", formula.ref, ", результаты - в таблице ", table.ref, "."),
+        P("Метрика задана формулой (", formula.ref, "), результаты - в таблице ", table.ref, "."),
         formula,
         table,
         Listing("model.fit(X, y)", caption="Обучение модели", language="python"),

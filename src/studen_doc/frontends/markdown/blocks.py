@@ -37,7 +37,7 @@ from studen_doc.model.report import Toc
 _NUMBER_LINES = frozenset({"numberLines", "number-lines", "line-numbers"})
 
 #: Служебные ``:::``-блоки, которые понимает фронтенд (для сообщения об ошибке).
-_KNOWN_DIVS = "table, toc, pagebreak, insert, where, sources"
+_KNOWN_DIVS = "table, toc, pagebreak, keep-with-next, insert, where, sources"
 
 _WHITESPACE = ("Space", "SoftBreak")
 
@@ -92,6 +92,8 @@ class BlockConverter:
                 items.append(Toc(attr.options.text("title"), levels=attr.options.integer("levels", 3)))
             case ("pagebreak",):
                 items.append(PageBreak())
+            case ("keep-with-next",):
+                items.extend(_keep_with_next(self.convert(content)))
             case ("insert",):
                 items.extend(self._substitutions.insert(self._insert_name(attr)))
             case ("where",):
@@ -235,6 +237,16 @@ class BlockConverter:
                 case _:
                     raise MarkdownError("В пункте списка допустимы один абзац и вложенные списки")
         return ListItem(text or (), tuple(children))
+
+
+def _keep_with_next(items: list[Item]) -> list[Item]:
+    """
+    ``::: keep-with-next``: абзацы внутри не отрываются от следующего блока (вопрос, за которым идет ответ).
+    """
+    return [
+        P(*item.parts, align=item.align, indent=item.indent, keep_with_next=True) if isinstance(item, P) else item
+        for item in items
+    ]
 
 
 def _is_blank(nodes: Sequence[Node]) -> bool:

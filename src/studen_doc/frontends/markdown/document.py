@@ -20,6 +20,7 @@ from studen_doc.model.bibliography import Bibliography
 from studen_doc.model.blocks import Block
 from studen_doc.model.inline import ModelInline
 from studen_doc.model.report import Section, TitlePage, Toc
+from studen_doc.numfmt import MINUS
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,6 +39,7 @@ def parse_markdown(
     inserts: Mapping[str, Block | Sequence[Block]] | None = None,
     variables: Mapping[str, Any] | None = None,
     decimal: str = ",",
+    minus: str = MINUS,
     command: Sequence[str] | None = None,
     timeout_s: float = 120.0,
 ) -> ParsedDocument:
@@ -45,7 +47,7 @@ def parse_markdown(
     Читает файл .md; пути к картинкам и ``file=`` у листингов отсчитываются от папки файла.
 
     ``inserts`` - блоки, подставляемые вместо ``::: {.insert name=...}``; ``variables`` - значения для
-    ``[]{var=имя format=".3f"}``; ``decimal`` - десятичный разделитель в подставленных числах.
+    ``[]{var=имя format=".3f"}``; ``decimal`` - десятичный разделитель, ``minus`` - знак минус в подставленных числах.
     """
     path = Path(path)
     return parse_markdown_text(
@@ -54,6 +56,7 @@ def parse_markdown(
         inserts=inserts,
         variables=variables,
         decimal=decimal,
+        minus=minus,
         command=command,
         timeout_s=timeout_s,
     )
@@ -66,15 +69,16 @@ def parse_markdown_text(
     inserts: Mapping[str, Block | Sequence[Block]] | None = None,
     variables: Mapping[str, Any] | None = None,
     decimal: str = ",",
+    minus: str = MINUS,
     command: Sequence[str] | None = None,
     timeout_s: float = 120.0,
 ) -> ParsedDocument:
     """
     Разбирает текст Markdown. ``base_dir`` - от чего отсчитывать относительные пути (по умолчанию текущая папка);
-    ``inserts``, ``variables`` и ``decimal`` - как у ``parse_markdown``.
+    ``inserts``, ``variables``, ``decimal`` и ``minus`` - как у ``parse_markdown``.
     """
     ast = read_ast(text, command=command, timeout_s=timeout_s)
-    substitutions = Substitutions(inserts or {}, variables or {}, decimal)
+    substitutions = Substitutions(inserts or {}, variables or {}, decimal, minus)
     inlines = InlineConverter(substitutions)
     resolved_base = Path(base_dir) if base_dir is not None else Path.cwd()
     converter = BlockConverter(resolved_base, inlines, substitutions)

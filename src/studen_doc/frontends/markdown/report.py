@@ -14,6 +14,7 @@ from studen_doc.frontends.markdown.meta import REGISTRY_HINT
 from studen_doc.model.bibliography import Bibliography
 from studen_doc.model.blocks import Block
 from studen_doc.model.report import Report, TitlePage
+from studen_doc.numfmt import MINUS
 from studen_doc.style import ReportStyle, style_named, style_names
 
 
@@ -30,6 +31,7 @@ class ReportOptions(TypedDict, total=False):
     inserts: Mapping[str, Block | Sequence[Block]] | None
     variables: Mapping[str, Any] | None
     decimal: str
+    minus: str
     command: Sequence[str] | None
 
 
@@ -54,6 +56,7 @@ def load_report(
             inserts=options.get("inserts"),
             variables=options.get("variables"),
             decimal=options.get("decimal", ","),
+            minus=options.get("minus", MINUS),
             command=options.get("command"),
         )
         for source in sources

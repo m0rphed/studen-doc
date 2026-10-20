@@ -10,19 +10,20 @@ from typing import Any
 
 from studen_doc.errors import MarkdownError
 from studen_doc.model.blocks import Block
-from studen_doc.numfmt import format_value
+from studen_doc.numfmt import MINUS, format_value
 
 
 @dataclass(frozen=True, slots=True)
 class Substitutions:
     """
     ``inserts`` - блок или список блоков по имени (вместо ``::: insert``); ``variables`` - значения по имени
-    (вместо ``[]{var=...}``); ``decimal`` - десятичный разделитель в подставленных числах.
+    (вместо ``[]{var=...}``); ``decimal`` - десятичный разделитель, ``minus`` - знак минус в подставленных числах.
     """
 
     inserts: Mapping[str, Block | Sequence[Block]] = field(default_factory=dict)
     variables: Mapping[str, Any] = field(default_factory=dict)
     decimal: str = ","
+    minus: str = MINUS
 
     def insert(self, name: str) -> list[Block]:
         """
@@ -39,4 +40,4 @@ class Substitutions:
         """
         if name not in self.variables:
             raise MarkdownError(f"Переменная {name!r} не передана (переданы: {sorted(self.variables)})")
-        return format_value(self.variables[name], spec, decimal=self.decimal)
+        return format_value(self.variables[name], spec, decimal=self.decimal, minus=self.minus)

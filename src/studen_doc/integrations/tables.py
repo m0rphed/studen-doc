@@ -14,7 +14,7 @@ from typing import Any
 
 from studen_doc.model.blocks import Table
 from studen_doc.model.inline import RichText
-from studen_doc.numfmt import format_value
+from studen_doc.numfmt import MINUS, format_value
 from studen_doc.types import Align
 
 #: Формат чисел: строка для ``format()`` либо функция значение -> текст.
@@ -112,6 +112,7 @@ def table_from(
     label: str | None = None,
     float_format: NumberFormat | Mapping[str, NumberFormat] = ".3f",
     decimal: str = ",",
+    minus: str = MINUS,
     na: str = "",
     col_widths_cm: Sequence[float] | None = None,
     align: Sequence[Align | None] | None = None,
@@ -125,14 +126,15 @@ def table_from(
     - словарь «столбец -> значения», список словарей, список строк (тогда ``columns`` обязателен).
 
     ``index=True`` добавляет индекс pandas первым столбцом. Вещественные числа форматирует ``float_format``
-    (одна строка формата для всех, функция или словарь «имя столбца -> формат») с разделителем ``decimal``;
-    целые не меняются; пропуски (None, NaN, pandas NA) заменяются на ``na``.
+    (одна строка формата для всех, функция или словарь "имя столбца -> формат") с разделителем ``decimal``; в
+    отрицательных числах, в том числе целых, дефис заменяется знаком ``minus`` (по умолчанию типографский U+2212);
+    пропуски (None, NaN, pandas NA) заменяются на ``na``.
     """
     grid = to_grid(data, index=index)
     names = _column_names(grid, columns)
     formats = float_format if isinstance(float_format, Mapping) else dict.fromkeys(names, float_format)
     text_rows = [
-        [_cell(value, formats.get(name, ".3f"), decimal, na) for name, value in zip(names, row, strict=True)]
+        [_cell(value, formats.get(name, ".3f"), decimal, minus, na) for name, value in zip(names, row, strict=True)]
         for row in grid.rows
     ]
     return Table(
@@ -158,18 +160,18 @@ def _column_names(grid: Grid, columns: Sequence[str] | None) -> list[str]:
     return names
 
 
-def _cell(value: Any, number_format: NumberFormat, decimal: str, na: str) -> str:
+def _cell(value: Any, number_format: NumberFormat, decimal: str, minus: str, na: str) -> str:
     if _is_missing(value):
         return na
     if isinstance(value, bool):
         return str(value)
     if isinstance(value, numbers.Integral):
-        return str(int(value))
+        return format_value(int(value), decimal=decimal, minus=minus)
     if isinstance(value, numbers.Real):
         number = float(value)
         if callable(number_format):
             return number_format(number)
-        return format_value(number, number_format, decimal=decimal)
+        return format_value(number, number_format, decimal=decimal, minus=minus)
     return str(value)
 
 

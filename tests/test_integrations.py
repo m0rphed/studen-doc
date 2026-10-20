@@ -15,21 +15,46 @@ from studen_doc import (
 from studen_doc.numfmt import format_value
 from studen_doc.universities.suai import SUAI
 
-
 # -------------------------------------------------------------------------------------- числа
+MINUS = "−"
+
+
 @pytest.mark.parametrize(
     ("value", "spec", "decimal", "expected"),
     [
         (0.88123, ".3f", ",", "0,881"),
         (0.88123, ".3f", ".", "0.881"),
         (12, "", ",", "12"),
-        (1.5e-05, "", ",", "1,5e-05"),
+        (1.5e-05, "", ",", "1,5e" + MINUS + "05"),  # знак порядка - тоже минус
         ("a.b", "", ",", "a.b"),
         (1234.5, ".1f", ",", "1234,5"),
+        (0.4512, ".1%", ",", "45,1%"),
     ],
 )
 def test_format_value_uses_decimal_separator_only_for_fractions(value, spec, decimal, expected):
     assert format_value(value, spec, decimal=decimal) == expected
+
+
+@pytest.mark.parametrize(
+    ("value", "spec", "expected"),
+    [
+        (-0.346, ".3f", MINUS + "0,346"),
+        (-5, "", MINUS + "5"),
+        (-1.5e-05, "", MINUS + "1,5e" + MINUS + "05"),
+        (-0.052, ".1%", MINUS + "5,2%"),
+        ("-0.5", "", MINUS + "0,5"),
+        ("a-b", "", "a-b"),  # не число: дефис остается
+        ("-", "", "-"),
+        (float("nan"), "", "nan"),
+    ],
+)
+def test_format_value_writes_a_typographic_minus_for_negative_numbers(value, spec, expected):
+    assert format_value(value, spec) == expected
+
+
+def test_minus_can_stay_a_hyphen_and_decimal_is_independent():
+    assert format_value(-0.346, ".3f", minus="-") == "-0,346"
+    assert format_value(-0.346, ".3f", decimal=".") == MINUS + "0.346"
 
 
 # ------------------------------------------------------------------------------------ таблицы
@@ -204,3 +229,11 @@ def test_empty_rows_still_need_column_names():
     assert table_from([], columns=["a"]).rows == []
     with pytest.raises(ValueError, match="columns"):
         table_from([])
+
+
+def test_table_cells_use_the_minus_sign_for_floats_and_integers_but_not_for_text_or_custom_formats():
+    table = table_from({"имя": ["a-b", "c"], "n": [-3, 4], "x": [-0.5, 1.25]})
+    assert table.rows == [["a-b", MINUS + "3", MINUS + "0,500"], ["c", "4", "1,250"]]
+    assert table_from({"x": [-0.5]}, minus="-").rows == [["-0,500"]]
+    custom = table_from({"x": [-0.5]}, float_format=lambda number: f"{number:.1f}")
+    assert custom.rows == [["-0.5"]]  # свой формат остается как есть

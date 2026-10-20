@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Self
 
 from studen_doc.model.blocks import Block
+from studen_doc.numfmt import MINUS
 
 if TYPE_CHECKING:
     from studen_doc.equations import MathConverter
@@ -125,6 +126,7 @@ class Report:
         inserts: Mapping[str, Block | Sequence[Block]] | None = None,
         variables: Mapping[str, Any] | None = None,
         decimal: str = ",",
+        minus: str = MINUS,
         command: Sequence[str] | None = None,
     ) -> Self:
         """
@@ -136,7 +138,7 @@ class Report:
 
         Python и Markdown смешиваются так: ``inserts={"таблица": Table(...)}`` подставляются вместо
         ``::: {.insert name=таблица}``, ``variables={"r2": 0.881}`` - вместо ``[]{var=r2 format=".3f"}``
-        (``decimal`` - десятичный разделитель в числах).
+        (``decimal`` - десятичный разделитель, ``minus`` - знак минус в числах; по умолчанию запятая и U+2212).
         ``command`` - свой запуск pandoc (по умолчанию ищется автоматически).
         """
         from studen_doc.frontends.markdown import load_report  # лениво: фронтенд зависит от модели
@@ -152,6 +154,7 @@ class Report:
             inserts=inserts,
             variables=variables,
             decimal=decimal,
+            minus=minus,
             command=command,
         )
 
