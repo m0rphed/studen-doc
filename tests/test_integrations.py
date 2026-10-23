@@ -237,3 +237,19 @@ def test_table_cells_use_the_minus_sign_for_floats_and_integers_but_not_for_text
     assert table_from({"x": [-0.5]}, minus="-").rows == [["-0,500"]]
     custom = table_from({"x": [-0.5]}, float_format=lambda number: f"{number:.1f}")
     assert custom.rows == [["-0.5"]]  # свой формат остается как есть
+
+
+def test_listing_languages_for_html_and_css_files(tmp_path):
+    page = tmp_path / "page.html"
+    page.write_text("<p>a</p>", encoding="utf-8")
+    sheet = tmp_path / "style.css"
+    sheet.write_text("p { color: red; }", encoding="utf-8")
+    assert listing_from_file(page).language == "html"
+    assert listing_from_file(sheet).language == "css"
+
+
+def test_highlight_falls_back_to_parent_token_for_tokens_missing_in_the_style():
+    from studen_doc.render.docx.highlight import highlight_lines
+
+    lines = highlight_lines("- banner:\n  - link: text\n", "yaml", "default")  # Punctuation.Indicator нет в стиле
+    assert "".join(span.text for span in lines[0]) == "- banner:"

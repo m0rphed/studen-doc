@@ -32,6 +32,8 @@ _LANGUAGES = {
     ".yml": "yaml",
     ".toml": "toml",
     ".md": "markdown",
+    ".html": "html",
+    ".css": "css",
 }
 
 

@@ -14,6 +14,20 @@ class Span(NamedTuple):
     italic: bool
 
 
+def _style_for_token(style, token_type):
+    """
+    Стиль токена; для токенов, которых нет в стиле (например, ``Punctuation.Indicator`` из лексера YAML), берется
+    стиль ближайшего родительского типа.
+    """
+    while True:
+        try:
+            return style.style_for_token(token_type)
+        except KeyError:
+            if token_type.parent is None:
+                raise
+            token_type = token_type.parent
+
+
 def highlight_lines(
     code: str,
     language: str,
@@ -31,7 +45,7 @@ def highlight_lines(
     style = get_style_by_name(pygments_style)
     lines: list[list[Span]] = [[]]
     for token_type, value in lex(code, get_lexer_by_name(language)):
-        token_style = style.style_for_token(token_type)
+        token_style = _style_for_token(style, token_type)
         for index, part in enumerate(value.split("\n")):
             if index > 0:
                 lines.append([])
