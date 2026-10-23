@@ -1,11 +1,15 @@
 """
 ГУАП (SUAI): титульный лист, пресет оформления лабораторных работ и DOCX-вёрстка титульного листа.
+
+Здесь один титульный лист - ``TitlePageSUAI``, для отчетов о лабораторных работах (основной вид в этой библиотеке).
+Другие документы ГУАП (курсовая работа, ВКР, реферат) оформляются иначе: им нужен свой класс титульного листа и
+своя вёрстка, они регистрируются так же, как этот (``register_title_page`` и ``render_title.register``).
 """
 
 from __future__ import annotations
 
 import datetime
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import NamedTuple
 
 from docx.enum.table import WD_ALIGN_VERTICAL
@@ -15,18 +19,21 @@ from docx.text.paragraph import Paragraph
 from studen_doc.model.report import TitlePage, register_title_page
 from studen_doc.ooxml.elements import Container
 from studen_doc.ooxml.fonts import apply_font
-from studen_doc.ooxml.paragraph import COMPACT, COMPACT_TIGHT, anchor_to_page_bottom, set_format
+from studen_doc.ooxml.paragraph import COMPACT, COMPACT_TIGHT, anchor_to_page_bottom, set_format, set_mark_font_size
 from studen_doc.ooxml.table_format import Border, add_table, set_cell_borders
 from studen_doc.render.docx import Context, render_title
 from studen_doc.style import GOST_732, HeadingStyle, ReportStyle, SectionRule, register_style
 from studen_doc.types import Align
 
-#: Оформление лабораторных работ ГУАП: заголовки слева с абзацным отступом, «Ход работы» нумеруется.
+#: Оформление лабораторных работ ГУАП: заголовки слева с абзацным отступом, «Ход работы» нумеруется. Интервал после
+#: заголовка 6 пт, у заголовков 2 уровня еще и 6 пт перед ним (как в образце кафедры).
 SUAI: ReportStyle = register_style(
     "suai",
     GOST_732.evolve(
         headings={
-            "structural": HeadingStyle(align="left", caps=False, first_indent_cm=1.25),
+            "structural": HeadingStyle(align="left", caps=False, first_indent_cm=1.25, after_pt=6),
+            "level1": HeadingStyle(after_pt=6),
+            "level2": HeadingStyle(before_pt=6, after_pt=6),
             "rules": {
                 "Цель работы": SectionRule(),
                 "Ход работы": SectionRule(numbered=True, structural=False),
@@ -42,9 +49,11 @@ SUAI: ReportStyle = register_style(
 @dataclass(kw_only=True)
 class TitlePageSUAI(TitlePage):
     """
-    Титульный лист отчёта ГУАП. Надписи, размеры и вертикальные интервалы можно переопределить.
+    Титульный лист отчёта о лабораторной работе ГУАП (не единственный возможный вид титульного листа: для курсовой
+    или ВКР нужен другой класс). Надписи, размеры и вертикальные интервалы можно переопределить.
 
-    Оформление титульного листа не зависит от стиля остального документа (``ReportStyle``).
+    Оформление титульного листа не зависит от стиля остального документа (``ReportStyle``). Интервалы между строками
+    шапки, подписей и названия сверены с титульным листом отчёта, оформленного по образцу кафедры.
     """
 
     student_name: str  # "Р. Е. Волчков"
@@ -72,11 +81,16 @@ class TitlePageSUAI(TitlePage):
     caption_size_pt: float = 10  # подписи под линиями ("подпись, дата")
 
     # вертикальные интервалы (пт)
-    line_gap_pt: float = 6  # после коротких строк шапки и перед блоками
-    title_gap_pt: float = 14  # между строками названия работы
-    gap_after_header_pt: float = 40
-    gap_before_title_pt: float = 80
-    gap_before_student_pt: float = 209
+    line_gap_pt: float = 10  # после коротких строк шапки ("ОТЧЕТ ЗАЩИЩЕН С ОЦЕНКОЙ") и перед блоками
+    gap_after_university_pt: float = 24  # между "ГУАП" и "КАФЕДРА"
+    gap_after_header_pt: float = 60  # между "КАФЕДРА" и "ОТЧЕТ ЗАЩИЩЕН С ОЦЕНКОЙ"
+    gap_before_signature_pt: float = 14  # между надписью ("ПРЕПОДАВАТЕЛЬ") и строкой с линиями
+    gap_before_title_pt: float = 55  # между подписями преподавателя и названием работы
+    title_gap_pt: float = 15  # между "ОТЧЁТ О ЛАБОРАТОРНОЙ РАБОТЕ" и названием
+    title_line_spacing: float = 1.5  # межстрочный интервал в названии работы (оно может занять две строки)
+    gap_before_course_pt: float = 42  # между названием работы и строкой "По курсу"
+    gap_before_student_pt: float = 148
+    caption_line_spacing: float = 0.75  # подписи под линиями жмутся к линии, как в образце
     gap_before_city_pt: float = 90  # используется, если city_at_page_bottom=False
     city_at_page_bottom: bool = True  # город и год прижаты к нижнему полю независимо от потока
 
@@ -104,11 +118,12 @@ def _line(
     before_pt: float = 0,
     after_pt: float = 0,
     bold: bool = False,
+    line_spacing: float | None = None,
 ) -> Paragraph:
     par = doc.add_paragraph()
     set_format(
         par,
-        base=COMPACT,
+        base=COMPACT if line_spacing is None else replace(COMPACT, line_spacing=line_spacing),
         align=align,
         before_pt=before_pt,
         after_pt=after_pt,
@@ -118,9 +133,13 @@ def _line(
     return par
 
 
-def _cell(cell: _Cell, spec: _SignCell, *, size_pt: float, underline: Border) -> None:
+def _cell(
+    cell: _Cell, spec: _SignCell, *, size_pt: float, underline: Border, line_spacing: float | None = None
+) -> None:
     par = cell.paragraphs[0]
-    set_format(par, base=COMPACT_TIGHT, align=spec.align)
+    base = COMPACT_TIGHT if line_spacing is None else replace(COMPACT_TIGHT, line_spacing=line_spacing)
+    set_format(par, base=base, align=spec.align)
+    set_mark_font_size(par, size_pt)  # пустая ячейка не должна быть выше соседней с текстом
     if spec.text:
         apply_font(par.add_run(spec.text), size_pt=size_pt)
     cell.vertical_alignment = WD_ALIGN_VERTICAL.BOTTOM
@@ -161,6 +180,7 @@ def _signature_table(
             _SignCell(caption),
             size_pt=title.caption_size_pt,
             underline=underline,
+            line_spacing=title.caption_line_spacing,
         )
 
 
@@ -174,7 +194,7 @@ def _render_suai_title(title: TitlePageSUAI, ctx: Context) -> None:
         title.university,
         align="center",
         size_pt=text,
-        after_pt=gap,
+        after_pt=title.gap_after_university_pt,
     )
     _line(
         doc,
@@ -197,7 +217,7 @@ def _render_suai_title(title: TitlePageSUAI, ctx: Context) -> None:
         align="left",
         size_pt=text,
         before_pt=gap,
-        after_pt=gap,
+        after_pt=title.gap_before_signature_pt,
     )
     free = width - 2 * title.column_gap_cm
     first, second, third = (free * ratio for ratio in title.teacher_columns)
@@ -233,12 +253,14 @@ def _render_suai_title(title: TitlePageSUAI, ctx: Context) -> None:
             size_pt=big,
             after_pt=title.title_gap_pt,
             bold=title.title_bold,
+            line_spacing=title.title_line_spacing,
         )
     _line(
         doc,
         f"{title.course_prefix}{title.subject}",
         align="center",
         size_pt=big,
+        before_pt=title.gap_before_course_pt,
     )
 
     _line(
@@ -247,7 +269,7 @@ def _render_suai_title(title: TitlePageSUAI, ctx: Context) -> None:
         align="left",
         size_pt=text,
         before_pt=title.gap_before_student_pt,
-        after_pt=gap,
+        after_pt=title.gap_before_signature_pt,
     )
     group_cm, number_cm, signature_cm = title.student_columns_cm
     small = title.column_gap_cm

@@ -68,6 +68,16 @@ def set_style_id(par: Paragraph, style_id: str | None) -> None:
     paragraph_xml(par).get_or_add_pPr().style = style_id
 
 
+def set_mark_font_size(par: Paragraph, size_pt: float) -> None:
+    """
+    Размер шрифта знака абзаца (``w:pPr/w:rPr``). Он задает высоту пустого абзаца, например пустой ячейки таблицы: без
+    него пустая ячейка берет размер из стиля и растягивает строку таблицы выше, чем текст в соседних ячейках.
+    """
+    half_points = round(size_pt * 2)
+    mark = element("w:rPr", None, element("w:sz", {"w:val": half_points}), element("w:szCs", {"w:val": half_points}))
+    insert_ordered(paragraph_xml(par).get_or_add_pPr(), mark, PPR_ORDER)
+
+
 def apply_format(target: Paragraph | ParagraphStyle, fmt: ParagraphFormat) -> None:
     """
     Применяет формат к абзацу или к стилю абзаца.
