@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 
 class Span(NamedTuple):
@@ -14,7 +14,7 @@ class Span(NamedTuple):
     italic: bool
 
 
-def _style_for_token(style, token_type):
+def _style_for_token(style: Any, token_type: Any) -> dict[str, Any]:
     """
     Стиль токена; для токенов, которых нет в стиле (например, ``Punctuation.Indicator`` из лексера YAML), берется
     стиль ближайшего родительского типа.
