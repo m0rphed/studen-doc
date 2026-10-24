@@ -49,6 +49,15 @@ STYLE_ORDER: Final = (
     "w:personalReply", "w:rsid", "w:pPr", "w:rPr", "w:tblPr", "w:trPr", "w:tcPr", "w:tblStylePr",
 )  # fmt: skip
 
+#: ``w:rPr`` - свойства запуска (текста внутри абзаца).
+RPR_ORDER: Final = (
+    "w:rStyle", "w:rFonts", "w:b", "w:bCs", "w:i", "w:iCs", "w:caps", "w:smallCaps", "w:strike", "w:dstrike",
+    "w:outline", "w:shadow", "w:emboss", "w:imprint", "w:noProof", "w:snapToGrid", "w:vanish", "w:webHidden",
+    "w:color", "w:spacing", "w:w", "w:kern", "w:position", "w:sz", "w:szCs", "w:highlight", "w:u", "w:effect",
+    "w:bdr", "w:shd", "w:fitText", "w:vertAlign", "w:rtl", "w:cs", "w:em", "w:lang", "w:eastAsianLayout",
+    "w:specVanish", "w:oMath",
+)  # fmt: skip
+
 #: ``w:numPr`` - принадлежность абзаца списку.
 NUM_PR_ORDER: Final = ("w:ilvl", "w:numId", "w:numberingChange", "w:ins")
 

@@ -6,6 +6,7 @@ from studen_doc.model.bibliography import Bibliography, SourceFormatter
 from studen_doc.model.blocks import (
     Block,
     Bullets,
+    CodeRun,
     Figure,
     Formula,
     Listing,
@@ -44,6 +45,7 @@ __all__ = [
     "Citation",
     "Cite",
     "Code",
+    "CodeRun",
     "Figure",
     "Formula",
     "I",

@@ -11,7 +11,7 @@ from docx.text.run import Run
 from lxml import etree
 
 from studen_doc.ooxml.elements import element, run_xml
-from studen_doc.ooxml.schema import STYLE_ORDER, ensure_child
+from studen_doc.ooxml.schema import RPR_ORDER, STYLE_ORDER, ensure_child
 
 _THEME_ATTRS = ("asciiTheme", "hAnsiTheme", "eastAsiaTheme", "cstheme")
 _SCRIPT_ATTRS = ("ascii", "hAnsi", "eastAsia", "cs")
@@ -57,12 +57,15 @@ def apply_font(
     bold: bool | None = None,
     italic: bool | None = None,
     underline: bool | None = None,
+    strike: bool | None = None,
     caps: bool | None = None,
     color: str | None = None,
+    shade: str | None = None,
     script: str | None = None,
 ) -> None:
     """
     Применяет шрифт к запуску или к стилю; ``None`` - «не менять». ``script``: "sup" (надстрочный) или "sub".
+    ``color`` - цвет текста, ``shade`` - заливка за текстом, оба в виде ``"rrggbb"``.
     """
     font = target.font
     if script is not None:
@@ -78,7 +81,12 @@ def apply_font(
         font.italic = italic
     if underline is not None:
         font.underline = underline
+    if strike is not None:
+        font.strike = strike
     if caps is not None:
         font.all_caps = caps
     if color is not None:
         font.color.rgb = RGBColor.from_string(color)
+    if shade is not None:
+        attributes = {"w:val": "clear", "w:color": "auto", "w:fill": shade}
+        ensure_child(_run_properties(target), "w:shd", RPR_ORDER, attributes)

@@ -146,9 +146,29 @@ class Table:
 
 
 @dataclass(frozen=True, slots=True)
+class CodeRun:
+    """
+    Фрагмент строки листинга со своим оформлением. Цвета - ``"rrggbb"`` без решетки, ``None`` - как у остального
+    текста листинга. Перевода строки в тексте быть не должно: строки листинга - это отдельные списки фрагментов.
+    """
+
+    text: str
+    color: str | None = None
+    background: str | None = None
+    bold: bool = False
+    italic: bool = False
+    underline: bool = False
+    strike: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class Listing:
     """
     Листинг кода; подпись «Листинг N — ...» над ним, если задан caption.
+
+    Подсветку синтаксиса обычно делает pygments по ``language``. Если фрагменты с оформлением уже готовы (вывод
+    терминала, свой лексер), их можно передать в ``runs`` (проще всего через ``Listing.styled``): тогда ``code``
+    должен быть их текстом, а ``language`` и ``highlight`` не используются.
     """
 
     code: str
@@ -158,6 +178,32 @@ class Listing:
     language: str | None = None  # для подсветки синтаксиса
     line_numbers: bool | None = None  # None -> как в стиле
     highlight: bool | None = None  # None -> как в стиле
+    runs: tuple[tuple[CodeRun, ...], ...] | None = None  # готовые фрагменты по строкам
+
+    def __post_init__(self) -> None:
+        if self.runs is None:
+            return
+        if any("\n" in run.text for line in self.runs for run in line):
+            raise ValueError("фрагмент строки листинга не должен содержать перевод строки")
+        expected = "\n".join("".join(run.text for run in line) for line in self.runs)
+        if self.code != expected:
+            raise ValueError("code листинга не совпадает с текстом runs; используйте Listing.styled")
+
+    @classmethod
+    def styled(
+        cls,
+        lines: Sequence[Sequence[CodeRun]],
+        caption: RichText | None = None,
+        *,
+        label: str | None = None,
+        line_numbers: bool | None = None,
+    ) -> Self:
+        """
+        Листинг из готовых строк с оформлением; ``code`` собирается из их текста.
+        """
+        runs = tuple(tuple(line) for line in lines)
+        code = "\n".join("".join(run.text for run in line) for line in runs)
+        return cls(code, caption, label=label, line_numbers=line_numbers, runs=runs)
 
     @property
     def ref(self) -> BlockRef:

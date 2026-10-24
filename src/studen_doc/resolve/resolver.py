@@ -260,6 +260,7 @@ class Resolver:
             block.language,
             line_numbers=style.line_numbers if block.line_numbers is None else block.line_numbers,
             highlight=style.highlight if block.highlight is None else block.highlight,
+            runs=block.runs,
         )
 
     def _formula(self, block: Formula, section: SectionContext) -> RFormula:

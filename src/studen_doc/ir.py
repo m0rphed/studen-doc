@@ -12,7 +12,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Literal
 
-from studen_doc.model.blocks import ImageSource
+from studen_doc.model.blocks import CodeRun, ImageSource
 from studen_doc.model.inline import Inline
 from studen_doc.model.report import TitlePage
 from studen_doc.style import ReportStyle
@@ -93,6 +93,7 @@ class RListing:
     language: str | None
     line_numbers: bool  # уже с учётом стиля
     highlight: bool
+    runs: tuple[tuple[CodeRun, ...], ...] | None = None  # готовые фрагменты строк вместо подсветки по языку
 
 
 @dataclass(frozen=True, slots=True)
