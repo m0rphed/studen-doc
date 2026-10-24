@@ -21,8 +21,10 @@ from studen_doc.errors import (
 )
 from studen_doc.integrations import (
     figure_from_matplotlib,
+    figure_from_terminal,
     listing_from_callable,
     listing_from_file,
+    listing_from_terminal,
     table_from,
 )
 from studen_doc.model import (
@@ -32,6 +34,7 @@ from studen_doc.model import (
     Citation,
     Cite,
     Code,
+    CodeRun,
     Figure,
     Formula,
     I,
@@ -65,6 +68,7 @@ __all__ = [
     "Citation",
     "Cite",
     "Code",
+    "CodeRun",
     "Figure",
     "Formula",
     "HeadingStyle",
@@ -95,9 +99,11 @@ __all__ = [
     "Text",
     "TitlePage",
     "figure_from_matplotlib",
+    "figure_from_terminal",
     "format_value",
     "listing_from_callable",
     "listing_from_file",
+    "listing_from_terminal",
     "register_style",
     "register_title_page",
     "table_from",

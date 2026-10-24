@@ -18,6 +18,9 @@ dependencies = [
 highlight = [
     "pygments>=2.21.0",
 ]
+terminal = [
+    "termsnap[png,pty]",    # вывод терминала: цветной листинг и скриншот (GPL-3.0-or-later)
+]
 
 [build-system]
 requires = ["uv_build>=0.13.1,<0.14.0"]
@@ -29,6 +32,7 @@ dev = [
     "lxml-stubs>=0.5.1",
     "pytest>=9.1.1",
     "ruff>=0.17.1",
+    "termsnap[png,pty]",
     "types-pygments>=2.21.0.20260819",
 ]
 examples = [
@@ -42,6 +46,9 @@ examples = [
 
 [tool.uv]
 default-groups = ["dev", "examples"]    # примеры с numpy, pandas, matplotlib запускаются обычным ``uv run``
+
+[tool.uv.sources]
+termsnap = { git = "https://github.com/m0rphed/termsnap" }    # GPL-3.0-or-later, нужен только extra terminal
 
 [tool.ruff]
 line-length = 120

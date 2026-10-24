@@ -1,3 +1,4 @@
+import os
 import re
 
 import pytest
@@ -68,3 +69,30 @@ def test_api_tour_demo_uses_references_by_block_and_custom_mono_font(tmp_path):
     assert 'w:ascii="Cascadia Code"' in styles
     assert "подготовка данных;" in text and "проверка остатков." in text  # нумерацию «а)» рисует Word
     assert len(doc.inline_shapes) == 1 and len(captions(doc, "Таблица ")) == 1
+
+
+def test_terminal_demo_has_listing_and_screenshots(tmp_path):
+    pytest.importorskip("termsnap")
+    pytest.importorskip("PIL")
+    import demo_terminal
+
+    doc = Document(str(demo_terminal.build_report(ipython=False).build_to_docx(tmp_path / "terminal.docx")))
+    assert len(captions(doc, "Листинг ")) == 1
+    assert len(captions(doc, "Рисунок ")) == 3 and len(doc.inline_shapes) == 3
+    code = [p for p in doc.paragraphs if p.style.name == "Код"]
+    assert any(p.text.startswith("эпоха 5/5") for p in code)  # вывод остался текстом
+    assert any(run.font.color.rgb is not None for p in code for run in p.runs)  # и сохранил цвета
+
+
+@pytest.mark.skipif(
+    os.environ.get("STUDEN_DOC_TEST_IPYTHON") != "1", reason="нужны uvx и сеть: STUDEN_DOC_TEST_IPYTHON=1"
+)
+def test_terminal_demo_ipython_section(tmp_path):
+    pytest.importorskip("termsnap")
+    import demo_terminal
+
+    doc = Document(str(demo_terminal.build_report(ipython=True).build_to_docx(tmp_path / "terminal.docx")))
+    assert len(captions(doc, "Рисунок ")) == 4 and len(captions(doc, "Листинг ")) == 2
+    text = "\n".join(p.text for p in doc.paragraphs)
+    assert "Out[2]: [0, 1, 4, 9, 16, 25]" in text
+    assert "ZeroDivisionError: division by zero" in text
