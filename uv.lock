@@ -1108,7 +1108,7 @@ examples = [
 [[package]]
 name = "termsnap"
 version = "0.1.0"
-source = { git = "https://github.com/m0rphed/termsnap#f29d13fe9861c376237994ab91c24d57623d0409" }
+source = { git = "https://github.com/m0rphed/termsnap#eb6a6ce6d10bd5f458337b53cb38f87cd4a37d38" }
 
 [package.optional-dependencies]
 png = [
