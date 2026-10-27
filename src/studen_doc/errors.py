@@ -15,6 +15,9 @@
     |-- BibliographyError     список источников нельзя составить: нет записи, файла или стиля CSL
     |-- MathConversionError   формулу нельзя превратить в OMML
     `-- PandocError           pandoc не найден, не запустился или завершился с ошибкой
+
+Предупреждение ``MarkupInPlainTextWarning`` (через ``warnings``) - не ошибка отчета: документ собирается, но
+выглядит не так, как, скорее всего, задумано.
 """
 
 from __future__ import annotations
@@ -56,4 +59,12 @@ class MathConversionError(ReportError):
 class PandocError(ReportError):
     """
     pandoc не найден, не запустился, не уложился во время или завершился с ошибкой.
+    """
+
+
+class MarkupInPlainTextWarning(UserWarning):
+    """
+    В обычной строке есть законченная формула (``$x^2$`` или ``$$x^2$$``): строка выводится буквально, и формула
+    останется знаками доллара. Разметка включается через ``Md("...")``; если доллары нужны как есть, предупреждение
+    отключается: ``warnings.filterwarnings("ignore", category=MarkupInPlainTextWarning)``.
     """

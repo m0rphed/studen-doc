@@ -14,6 +14,7 @@ from studen_doc.equations import MathConverter, PandocConverter
 from studen_doc.errors import (
     BibliographyError,
     MarkdownError,
+    MarkupInPlainTextWarning,
     MathConversionError,
     PandocError,
     ReportError,
@@ -77,6 +78,7 @@ __all__ = [
     "ListItem",
     "Listing",
     "MarkdownError",
+    "MarkupInPlainTextWarning",
     "Math",
     "MathConversionError",
     "MathConverter",

@@ -8,12 +8,28 @@
 
 from __future__ import annotations
 
+import re
+import warnings
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import Literal, TypeGuard
 
+from studen_doc.errors import MarkupInPlainTextWarning
+
 #: Надстрочный и подстрочный текст.
 type Script = Literal["sup", "sub"]
+
+#: Законченная формула в тексте по правилам pandoc: ``$$...$$`` либо ``$...$``, где после открывающего знака
+#: сразу идет не пробел, перед закрывающим стоит не пробел, а сразу за ним нет цифры. Поэтому "от $5 до $10" и
+#: "100$ и 200$" формулой не считаются, а "$x^2$" - считается. Экранированный ``\$`` знаком формулы не является.
+_MATH_SPAN = re.compile(
+    r"(?<!\\)\$\$.+?(?<!\\)\$\$"
+    r"|(?<![\\$])\$(?=\S)(?!\$).*?(?<=\S)(?<!\\)\$(?!\d)",
+    re.DOTALL,
+)
+
+#: Сколько знаков найденной формулы показывать в предупреждении.
+_WARNING_EXCERPT = 40
 
 
 @dataclass(frozen=True, slots=True)
@@ -101,6 +117,9 @@ class Md:
 
     Разбирает pandoc (диалект как у ``Report.from_markdown``): **жирный**, *курсив*, `код`, ``$формула$``,
     ``^надстрочный^``, ``~подстрочный~``, ``[](#метка)`` - ссылка на номер, ``\\`` и перевод строки - перенос строки.
+
+    Это абзац Markdown, поэтому пробелы и переводы строк по краям отбрасываются (``Md("  а ")`` - то же, что
+    ``Md("а")``). Пробел между соседними фрагментами ставят в обычной строке: ``[Md("а"), " ", Md("б")]``.
     """
 
     source: str
@@ -181,9 +200,13 @@ def is_rich_text(value: object) -> TypeGuard[RichText]:
 def as_inlines(value: RichText, markup: _Markup) -> tuple[ModelInline, ...]:
     """
     Приводит любое допустимое «богатое» значение к кортежу узлов; ``markup`` разбирает ``Md``.
+
+    Обычная строка остается буквальным текстом, но если в ней законченная формула (``$x^2$``), это
+    ``MarkupInPlainTextWarning``: скорее всего, нужен ``Md``.
     """
     match value:
         case str():
+            _warn_about_math(value)
             return (Text(value),) if value else ()
         case Md(source=source):
             return markup(source)
@@ -191,3 +214,16 @@ def as_inlines(value: RichText, markup: _Markup) -> tuple[ModelInline, ...]:
             return (value,)
         case _:
             return tuple(node for part in value for node in as_inlines(part, markup))
+
+
+def _warn_about_math(text: str) -> None:
+    found = _MATH_SPAN.search(text)
+    if found is None:
+        return
+    span = found.group()
+    shown = span if len(span) <= _WARNING_EXCERPT else span[:_WARNING_EXCERPT] + "..."
+    warnings.warn(
+        f"в обычной строке есть формула {shown!r}: строка выводится буквально, разметка включается через Md(...)",
+        MarkupInPlainTextWarning,
+        stacklevel=2,
+    )

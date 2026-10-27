@@ -80,7 +80,7 @@ def test_markdown_renderer_consumes_the_same_ir(tmp_path):
     report = Report(SUAI)
     report.add_section(
         "Ход работы",
-        P("См. рисунок ", Ref("fig:a"), " и формулу $x^2$."),
+        P("См. рисунок ", Ref("fig:a"), " и формулу ", Math("x^2"), "."),
         Subsection("Подраздел", Figure(png(), "Подпись", label="fig:a"),
                    Table(["A", "B"], [["1", "x"], ["2", "y"]], caption="Итоги", label="tab:t"),
                    Formula("E=mc^2", label="eq:e"), Bullets(["раз", "два"])),

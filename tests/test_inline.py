@@ -1,6 +1,9 @@
+import re
+import warnings
+
 import pytest
 
-from studen_doc import Md, P, Report, Table
+from studen_doc import MarkupInPlainTextWarning, Md, P, Report, Table
 from studen_doc.frontends import MarkdownError, parse_inline_markdown
 from studen_doc.model.inline import B, Code, I, LineBreak, Math, Ref, Text, as_inlines, merge_text, plain_text
 from studen_doc.pandoc import find_pandoc
@@ -16,10 +19,61 @@ def literal(source: str):
 # --------------------------------------------------------------------------- строки буквальны
 @pytest.mark.parametrize(
     "source",
-    ["просто текст", "**не жирный**", "[[не ссылка]]", "$не формула$", r"\* и `не код`", "а\nб"],
+    ["просто текст", "**не жирный**", "[[не ссылка]]", r"\* и `не код`", "а\nб"],
 )
 def test_plain_strings_are_literal_text(source):
     assert as_inlines(source, literal) == (Text(source),)
+
+
+# ------------------------------------------------------- формула в обычной строке: предупреждение
+@pytest.mark.parametrize(
+    "source",
+    ["$x^2$", "матрица $A$", "в $a$ и $b$", r"$\alpha$", "$$x^2$$", "до $$\nx\n$$ после", "$a+b$, 5 $"],
+)
+def test_a_complete_formula_in_a_plain_string_is_warned_about_but_stays_literal(source):
+    with pytest.warns(MarkupInPlainTextWarning, match="Md"):
+        assert as_inlines(source, literal) == (Text(source),)
+
+
+def test_the_warning_shows_the_formula_that_was_found():
+    with pytest.warns(MarkupInPlainTextWarning, match=re.escape(repr("$x^2$"))):
+        as_inlines("матрица $x^2$ целиком", literal)
+
+
+def test_a_long_formula_is_cut_in_the_warning():
+    with pytest.warns(MarkupInPlainTextWarning) as caught:
+        as_inlines("$" + "x" * 100 + "$", literal)
+    assert len(str(caught[0].message)) < 200 and "..." in str(caught[0].message)
+
+
+@pytest.mark.parametrize(
+    "source",
+    ["от $5 до $10", "100$ и 200$", r"цена \$5 и \$6", "5 $ 6", "$", "$$", "$ x $", "$x ", "a $ b$", "$5$10", ""],
+)
+def test_dollars_that_are_not_a_formula_are_not_warned_about(source):
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        as_inlines(source, literal)
+
+
+def test_text_nodes_and_md_are_not_warned_about():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        as_inlines([Text("$x$"), B("$y$"), Code("$z$"), Md("$w$")], lambda source: (Math(source.strip("$")),))
+
+
+def test_the_warning_can_be_switched_off():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        warnings.filterwarnings("ignore", category=MarkupInPlainTextWarning)
+        as_inlines("$x^2$", literal)
+
+
+def test_a_caption_and_a_cell_with_a_formula_in_a_plain_string_are_warned_about():
+    report = Report(SUAI).add_section("Раздел", Table(["a"], [["$x^2$"]], caption="Матрица $A$"))
+    with pytest.warns(MarkupInPlainTextWarning) as caught:
+        report.resolve(inline_parser=literal)
+    assert {w.message.args[0].split("'")[1] for w in caught} == {"$x^2$", "$A$"}
 
 
 def test_empty_string_gives_no_nodes():
@@ -88,6 +142,21 @@ def test_md_escapes_and_lone_markers_stay_text():
     sources = [r"2 \* 3 * 4", r"цена \$5 и \$6", "5 $ 6"]
     parsed = parse_inline_markdown(sources)
     assert [plain_text(parsed[s]) for s in sources] == ["2 * 3 * 4", "цена $5 и $6", "5 $ 6"]
+
+
+@needs_pandoc
+def test_md_drops_spaces_and_line_breaks_at_the_edges():
+    padded = "  а *б*\n "
+    parsed = parse_inline_markdown([padded, "а *б*"])
+    assert parsed[padded] == parsed["а *б*"]
+    assert plain_text(parsed[padded]) == "а б"
+
+
+@needs_pandoc
+def test_a_space_between_fragments_belongs_to_a_plain_string_not_to_md():
+    report = Report(SUAI).add_section("Раздел", P(Md("а"), " ", Md("б")), P(Md("а"), Md(" б")))
+    paragraphs = [node for node in report.resolve().nodes if type(node).__name__ == "RParagraph"]
+    assert [plain_text(paragraph.inlines) for paragraph in paragraphs] == ["а б", "аб"]
 
 
 @needs_pandoc
